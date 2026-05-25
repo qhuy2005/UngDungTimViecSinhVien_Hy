@@ -157,7 +157,7 @@ fun DieuHuong(
 
             composable("thongke") {
 
-                ThongKe()
+                ThongKe(viewModel)
             }
 
             composable("gioithieu") {

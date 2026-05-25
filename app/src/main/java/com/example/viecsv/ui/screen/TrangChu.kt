@@ -28,6 +28,8 @@ import com.example.viecsv.viewmodel.JobViewModel
 fun TrangChu(viewModel: JobViewModel) {
     val danhSachCongViec by viewModel.jobs.collectAsState()
     var searchQueries by remember { mutableStateOf("") }
+    var selectedJobForDetail by remember { mutableStateOf<Job?>(null) }
+    var jobToUpdate by remember { mutableStateOf<Job?>(null) }
 
     val filteredJobs = if (searchQueries.isBlank()) {
         danhSachCongViec
@@ -105,20 +107,44 @@ fun TrangChu(viewModel: JobViewModel) {
                 items(filteredJobs) { job ->
                     JobCardItem(
                         job = job,
-                        onDelete = { viewModel.deleteJob(job) }
+                        onDelete = { viewModel.deleteJob(job) },
+                        onClick = { selectedJobForDetail = job }
                     )
                 }
             }
+        }
+
+        selectedJobForDetail?.let { job ->
+            JobDetailDialog(
+                job = job,
+                onDismiss = { selectedJobForDetail = null },
+                onEditClick = {
+                    selectedJobForDetail = null
+                    jobToUpdate = job
+                }
+            )
+        }
+
+        jobToUpdate?.let { job ->
+            UpdateJobDialog(
+                job = job,
+                onDismiss = { jobToUpdate = null },
+                onUpdate = { updatedJob ->
+                    viewModel.updateJob(updatedJob)
+                    jobToUpdate = null
+                }
+            )
         }
     }
 }
 
 @Composable
-fun JobCardItem(job: Job, onDelete: () -> Unit) {
+fun JobCardItem(job: Job, onDelete: () -> Unit, onClick: () -> Unit) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        onClick = onClick
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -155,6 +181,125 @@ fun JobCardItem(job: Job, onDelete: () -> Unit) {
                 JobTag(icon = Icons.Default.AttachMoney, text = job.salary, color = Color(0xFF4CAF50))
                 JobTag(icon = Icons.Default.Timer, text = job.category, color = Color(0xFF2196F3))
             }
+        }
+    }
+}
+
+@Composable
+fun JobDetailDialog(job: Job, onDismiss: () -> Unit, onEditClick: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Chi tiết công việc",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                DetailItem(label = "Tên công việc", value = job.title, icon = Icons.Default.Work)
+                DetailItem(label = "Công ty", value = job.company, icon = Icons.Default.Business)
+                DetailItem(label = "Mức lương", value = job.salary, icon = Icons.Default.AttachMoney)
+                DetailItem(label = "Loại công việc", value = job.category, icon = Icons.Default.Category)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onEditClick) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Chỉnh sửa")
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Đóng")
+            }
+        },
+        shape = RoundedCornerShape(28.dp)
+    )
+}
+
+@Composable
+fun UpdateJobDialog(job: Job, onDismiss: () -> Unit, onUpdate: (Job) -> Unit) {
+    var title by remember { mutableStateOf(job.title) }
+    var company by remember { mutableStateOf(job.company) }
+    var salary by remember { mutableStateOf(job.salary) }
+    var category by remember { mutableStateOf(job.category) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Cập nhật công việc", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = title, 
+                    onValueChange = { title = it }, 
+                    label = { Text("Tên công việc") }, 
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                OutlinedTextField(
+                    value = company, 
+                    onValueChange = { company = it }, 
+                    label = { Text("Công ty") }, 
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                OutlinedTextField(
+                    value = salary, 
+                    onValueChange = { salary = it }, 
+                    label = { Text("Mức lương") }, 
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                OutlinedTextField(
+                    value = category, 
+                    onValueChange = { category = it }, 
+                    label = { Text("Loại công việc") }, 
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onUpdate(job.copy(title = title, company = company, salary = salary, category = category)) }) {
+                Text("Cập nhật")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Hủy") }
+        },
+        shape = RoundedCornerShape(28.dp)
+    )
+}
+
+@Composable
+fun DetailItem(label: String, value: String, icon: ImageVector) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
