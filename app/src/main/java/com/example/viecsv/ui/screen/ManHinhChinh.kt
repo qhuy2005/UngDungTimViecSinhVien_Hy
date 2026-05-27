@@ -48,7 +48,7 @@ fun DanhSachCongViecScreen(
                     )
 
                     Text(
-                        text = "Lương: ${congViec.salary}"
+                        text = "Lương: ${congViec.salary}tr/tháng"
                     )
 
                     Text(

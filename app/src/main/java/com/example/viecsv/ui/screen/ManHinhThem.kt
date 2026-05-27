@@ -93,7 +93,7 @@ fun ManHinhThem(
                         value = luong,
                         onValueChange = { luong = it },
                         label = "Mức lương",
-                        placeholder = "VD: 25.000đ/giờ",
+                        placeholder = "VD: 20",
                         icon = Icons.Default.AttachMoney,
                         isError = daBamThem && luong.isEmpty()
                     )
