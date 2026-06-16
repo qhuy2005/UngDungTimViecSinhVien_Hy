@@ -22,7 +22,7 @@ class JobViewModel(
     fun addJob(job: Job) {
 
         viewModelScope.launch {
-            dao.insert(job)
+            dao.insert(job)//
         }
     }
 
